@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Tangkap Buah 🍎</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background: transparent;
+            cursor: none;
+            touch-action: none;
+        }
+
+        .clouds {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+            opacity: 0.8;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            from {
+                transform: translateX(-200px);
+            }
+            to {
+                transform: translateX(calc(100vw + 200px));
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-20px) scale(1.05);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        #mainMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
+        }
+
+        .menu-title {
+            font-size: 48px;
+            color: #FF1744;
+            text-shadow: 4px 4px 0 #FFD93D, 6px 6px 0 #333, -2px -2px 0 white, 2px -2px 0 white, -2px 2px 0 white;
+            margin-bottom: 20px;
+            animation: bounce 2s ease-in-out infinite;
+            font-weight: bold;
+        }
+
+        .menu-subtitle {
+            font-size: 24px;
+            color: #2196F3;
+            text-shadow: 3px 3px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        .fruit-display {
+            font-size: 60px;
+            margin: 20px 0;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .menu-instructions {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            margin: 20px;
+            max-width: 90%;
+            width: 500px;
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .instruction-icon {
+            font-size: 32px;
+            margin-right: 15px;
+            min-width: 40px;
+        }
+
+        .good {
+            color: #4CAF50;
+        }
+
+        .bad {
+            color: #F44336;
+        }
+
+        #startBtn {
+            background: linear-gradient(to bottom, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            font-size: 32px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 30px;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 8px 0 #2d6b2f;
+            transition: all 0.1s;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        #startBtn:hover {
+            background: linear-gradient(to bottom, #45a049, #3d8b40);
+            transform: scale(1.05);
+        }
+
+        #startBtn:active {
+            transform: translateY(5px);
+            box-shadow: 0 3px 0 #2d6b2f;
+        }
+
+        @media (max-width: 768px) {
+            .menu-title {
+                font-size: 32px;
+            }
+
+            .menu-subtitle {
+                font-size: 18px;
+            }
+
+            .fruit-display {
+                font-size: 40px;
+            }
+
+            .instruction-item {
+                font-size: 16px;
+            }
+
+            .instruction-icon {
+                font-size: 28px;
+                margin-right: 10px;
+            }
+
+            #startBtn {
+                padding: 15px 40px;
+                font-size: 24px;
+            }
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF6B6B;
+            text-shadow: 3px 3px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white;
+            z-index: 10;
+            display: none;
+        }
+
+        #lives {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF6B6B;
+            text-shadow: 3px 3px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white;
+            z-index: 10;
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            #score, #lives {
+                top: 20px;
+                font-size: 32px;
+            }
+            
+            #score {
+                left: 20px;
+            }
+            
+            #lives {
+                right: 20px;
+            }
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 90%;
+            width: 400px;
+        }
+
+        #gameOver h1 {
+            color: #FF6B6B;
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+
+        #gameOver p {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        @media (min-width: 768px) {
+            #gameOver {
+                padding: 40px;
+            }
+
+            #gameOver h1 {
+                font-size: 48px;
+                margin-bottom: 20px;
+            }
+
+            #gameOver p {
+                font-size: 24px;
+                margin: 15px 0;
+            }
+        }
+
+        #restartBtn {
+            background: linear-gradient(to bottom, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-family: 'Comic Sans MS', cursive;
+            box-shadow: 0 5px 0 #2d6b2f;
+            transition: all 0.1s;
+        }
+
+        @media (min-width: 768px) {
+            #restartBtn {
+                padding: 15px 40px;
+                font-size: 24px;
+                margin-top: 20px;
+            }
+        }
+
+        #restartBtn:hover {
+            background: linear-gradient(to bottom, #45a049, #3d8b40);
+        }
+
+        #restartBtn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #2d6b2f;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 14px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 10;
+            text-align: center;
+            padding: 0 10px;
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            #instructions {
+                bottom: 20px;
+                font-size: 20px;
+            }
+        }
+
+        .warning {
+            color: #ff4444;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="clouds" id="clouds"></div>
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- Main Menu -->
+    <div id="mainMenu">
+        <h1 class="menu-title">🍎 TANGKAP BUAH 🍎</h1>
+        <p class="menu-subtitle">Petualangan Seru Menangkap Buah!</p>
+        
+        <div class="fruit-display">🍎 🍊 🍌 🍇 🍓</div>
+        
+        <div class="menu-instructions">
+            <div class="instruction-item">
+                <span class="instruction-icon good">✅</span>
+                <span><strong>Tangkap buah</strong> untuk dapat poin!</span>
+            </div>
+            <div class="instruction-item">
+                <span class="instruction-icon bad">❌</span>
+                <span><strong>Hindari bom</strong> atau nyawa berkurang!</span>
+            </div>
+            <div class="instruction-item">
+                <span class="instruction-icon">❤️</span>
+                <span>Kamu punya <strong>3 nyawa</strong></span>
+            </div>
+            <div class="instruction-item">
+                <span class="instruction-icon">⏰</span>
+                <span>Main selama <strong>60 detik</strong></span>
+            </div>
+            <div class="instruction-item">
+                <span class="instruction-icon">📱</span>
+                <span>Sentuh & geser untuk bermain</span>
+            </div>
+        </div>
+        
+        <button id="startBtn">MULAI MAIN! 🎮</button>
+    </div>
+    
+    <div id="score">🍎 Skor: 0</div>
+    <div id="lives">❤️ Nyawa: 3</div>
+    <div id="instructions">📱 Tangkap buah 🍎🍊🍌 | <span class="warning">Hindari bom 💣!</span></div>
+    
+    <div id="gameOver">
+        <h1 id="gameOverTitle">🎉 Permainan Selesai! 🎉</h1>
+        <p id="finalScore"></p>
+        <p id="message"></p>
+        <button id="restartBtn">Main Lagi! 🎮</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let score = 0;
+        let lives = 3;
+        let gameActive = false;
+        let gameStarted = false;
+        let items = [];
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        let basket = {
+            x: canvas.width / 2,
+            y: canvas.height - 100,
+            width: isMobile ? 100 : 120,
+            height: isMobile ? 80 : 100
+        };
+        let startTime;
+
+        // Generate clouds
+        function createClouds() {
+            const cloudsContainer = document.getElementById('clouds');
+            for (let i = 0; i < 5; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                cloud.style.width = Math.random() * 100 + 80 + 'px';
+                cloud.style.height = Math.random() * 40 + 40 + 'px';
+                cloud.style.top = Math.random() * 40 + '%';
+                cloud.style.left = Math.random() * 100 + '%';
+                cloud.style.animationDuration = Math.random() * 20 + 30 + 's';
+                cloud.style.animationDelay = Math.random() * 5 + 's';
+                cloudsContainer.appendChild(cloud);
+            }
+        }
+        createClouds();
+
+        // Start game button
+        document.getElementById('startBtn').addEventListener('click', () => {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('score').style.display = 'block';
+            document.getElementById('lives').style.display = 'block';
+            document.getElementById('instructions').style.display = 'block';
+            gameActive = true;
+            gameStarted = true;
+            startTime = Date.now();
+            gameLoop();
+        });
+
+        // Item class (fruits and bombs)
+        class FallingItem {
+            constructor() {
+                this.x = Math.random() * (canvas.width - 80) + 40;
+                this.y = -50;
+                this.size = Math.random() * 20 + 40;
+                this.speed = Math.random() * 2 + 3;
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+                
+                // 25% chance to be a bomb
+                this.isBomb = Math.random() < 0.25;
+                
+                if (!this.isBomb) {
+                    // Fruit types
+                    this.fruits = [
+                        { emoji: '🍎', color: '#FF4444' },
+                        { emoji: '🍊', color: '#FF8C00' },
+                        { emoji: '🍌', color: '#FFD700' },
+                        { emoji: '🍇', color: '#9370DB' },
+                        { emoji: '🍓', color: '#FF69B4' },
+                        { emoji: '🍉', color: '#FF6347' },
+                        { emoji: '🍑', color: '#FFB07C' }
+                    ];
+                    this.fruit = this.fruits[Math.floor(Math.random() * this.fruits.length)];
+                }
+            }
+
+            update() {
+                this.y += this.speed;
+                this.rotation += this.rotationSpeed;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                if (this.isBomb) {
+                    // Draw bomb
+                    // Bomb body
+                    ctx.fillStyle = '#2C2C2C';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 0.6, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Bomb shine
+                    ctx.fillStyle = '#444';
+                    ctx.beginPath();
+                    ctx.arc(-this.size * 0.2, -this.size * 0.2, this.size * 0.15, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Fuse
+                    ctx.strokeStyle = '#8B4513';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(this.size * 0.3, -this.size * 0.4);
+                    ctx.lineTo(this.size * 0.4, -this.size * 0.7);
+                    ctx.stroke();
+                    
+                    // Spark
+                    ctx.fillStyle = '#FF4500';
+                    ctx.beginPath();
+                    ctx.arc(this.size * 0.4, -this.size * 0.7, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(this.size * 0.4, -this.size * 0.7, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Draw fruit emoji
+                    ctx.font = this.size + 'px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.fruit.emoji, 0, 0);
+                }
+                
+                ctx.restore();
+            }
+
+            checkCollision() {
+                return this.x > basket.x - this.size * 0.5 && 
+                       this.x < basket.x + basket.width + this.size * 0.5 &&
+                       this.y + this.size * 0.5 > basket.y &&
+                       this.y < basket.y + basket.height;
+            }
+        }
+
+        // Draw basket
+        function drawBasket() {
+            // Basket body
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.moveTo(basket.x + 20, basket.y);
+            ctx.lineTo(basket.x + basket.width - 20, basket.y);
+            ctx.lineTo(basket.x + basket.width, basket.y + basket.height);
+            ctx.lineTo(basket.x, basket.y + basket.height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Basket weave pattern
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(basket.x + i * 25, basket.y);
+                ctx.lineTo(basket.x + 10 + i * 25, basket.y + basket.height);
+                ctx.stroke();
+            }
+
+            // Basket handle
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.arc(basket.x + basket.width / 2, basket.y - 20, 40, 0, Math.PI, true);
+            ctx.stroke();
+        }
+
+        // Explosion effect
+        function drawExplosion(x, y) {
+            ctx.fillStyle = '#FF4500';
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const dist = 30;
+                ctx.beginPath();
+                ctx.arc(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist, 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(x, y, 25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#FF6347';
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Mouse movement
+        canvas.addEventListener('mousemove', (e) => {
+            if (gameStarted) {
+                basket.x = e.clientX - basket.width / 2;
+                basket.x = Math.max(0, Math.min(canvas.width - basket.width, basket.x));
+            }
+        });
+
+        // Touch movement for mobile
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameStarted) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                basket.x = touch.clientX - basket.width / 2;
+                basket.x = Math.max(0, Math.min(canvas.width - basket.width, basket.x));
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameStarted) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                basket.x = touch.clientX - basket.width / 2;
+                basket.x = Math.max(0, Math.min(canvas.width - basket.width, basket.x));
+            }
+        });
+
+        // Spawn items
+        function spawnItem() {
+            if (gameActive && Math.random() < 0.025) {
+                items.push(new FallingItem());
+            }
+        }
+
+        // Update lives display
+        function updateLives() {
+            const heartsDisplay = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
+            document.getElementById('lives').textContent = heartsDisplay;
+        }
+
+        // Game loop
+        let explosionEffect = null;
+        function gameLoop() {
+            if (!gameActive) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw explosion if exists
+            if (explosionEffect) {
+                drawExplosion(explosionEffect.x, explosionEffect.y);
+                explosionEffect.timer--;
+                if (explosionEffect.timer <= 0) {
+                    explosionEffect = null;
+                }
+            }
+
+            spawnItem();
+
+            // Update and draw items
+            for (let i = items.length - 1; i >= 0; i--) {
+                items[i].update();
+                items[i].draw();
+
+                // Check collision
+                if (items[i].checkCollision()) {
+                    if (items[i].isBomb) {
+                        // Hit a bomb!
+                        lives--;
+                        updateLives();
+                        explosionEffect = { x: items[i].x, y: items[i].y, timer: 15 };
+                        
+                        if (lives <= 0) {
+                            endGame(false);
+                        }
+                    } else {
+                        // Caught a fruit!
+                        score++;
+                        document.getElementById('score').textContent = '🍎 Skor: ' + score;
+                    }
+                    items.splice(i, 1);
+                }
+                // Remove off-screen items
+                else if (items[i].y > canvas.height + 100) {
+                    items.splice(i, 1);
+                }
+            }
+
+            drawBasket();
+
+            // End game after 60 seconds
+            if (Date.now() - startTime > 60000) {
+                endGame(true);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(timeUp) {
+            gameActive = false;
+            const gameOverDiv = document.getElementById('gameOver');
+            const gameOverTitle = document.getElementById('gameOverTitle');
+            const finalScore = document.getElementById('finalScore');
+            const message = document.getElementById('message');
+
+            if (timeUp) {
+                gameOverTitle.textContent = '⏰ Waktu Habis!';
+            } else {
+                gameOverTitle.textContent = '💥 Kena Bom!';
+            }
+
+            finalScore.textContent = 'Skor Akhir: ' + score + ' buah!';
+
+            if (score >= 50) {
+                message.textContent = '🌟 Luar biasa! Kamu hebat sekali!';
+            } else if (score >= 30) {
+                message.textContent = '👏 Bagus sekali! Terus berlatih!';
+            } else if (score >= 15) {
+                message.textContent = '😊 Bagus! Coba lagi ya!';
+            } else {
+                message.textContent = '💪 Semangat! Main lagi yuk!';
+            }
+
+            gameOverDiv.style.display = 'block';
+        }
+
+        // Restart game
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Initial setup - show menu only
+        updateLives();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            basket.y = canvas.height - 100;
+            isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            basket.width = isMobile ? 100 : 120;
+            basket.height = isMobile ? 80 : 100;
+        });
+    </script>
+</body>
+</html>
